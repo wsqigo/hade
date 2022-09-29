@@ -12,10 +12,10 @@ type Tree struct {
 
 // 代表节点
 type node struct {
-	isLast  bool              // 代表这个节点是否可以成为最终的路由规则。该节点是否能成为一个独立的uri，是否自身就是一个终极节点
-	segment string            // uri中的字符串，代表这个节点表示的路由中某个段的字符串
-	handler ControllerHandler // 代表这个节点中包含的控制器，用于最终加载调用
-	childs  []*node           // 代表这个节点下的子节点
+	isLast   bool                // 代表这个节点是否可以成为最终的路由规则。该节点是否能成为一个独立的uri，是否自身就是一个终极节点
+	segment  string              // uri中的字符串，代表这个节点表示的路由中某个段的字符串
+	handlers []ControllerHandler // 中间件+控制器，用于最终加载调用
+	childs   []*node             // 代表这个节点下的子节点
 }
 
 func newNode() *node {
@@ -101,7 +101,7 @@ func (n *node) matchNode(uri string) *node {
 	return nil
 }
 
-// 增加路由节点
+// AddRouter 增加路由节点
 /*
 /book/list
 /book/:id（冲突）
@@ -110,7 +110,7 @@ func (n *node) matchNode(uri string) *node {
 /:user/name
 /:user/name/:age（冲突）
 */
-func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
+func (tree *Tree) AddRouter(uri string, handlers []ControllerHandler) error {
 	n := tree.root
 	// 确认路由是否冲突
 	if n.matchNode(uri) != nil {
@@ -145,7 +145,7 @@ func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
 			cnode.segment = segment
 			if isLast {
 				cnode.isLast = true
-				cnode.handler = handler
+				cnode.handlers = handlers
 			}
 			n.childs = append(n.childs, cnode)
 			objNode = cnode
@@ -156,12 +156,12 @@ func (tree *Tree) AddRouter(uri string, handler ControllerHandler) error {
 	return nil
 }
 
-// 匹配uri
-func (tree *Tree) FindHandler(uri string) ControllerHandler {
+// FindHandler 匹配uri
+func (tree *Tree) FindHandler(uri string) []ControllerHandler {
 	// 直接复用matchNode函数，uri是不带通配符的地址
 	matchNode := tree.root.matchNode(uri)
 	if matchNode == nil {
 		return nil
 	}
-	return matchNode.handler
+	return matchNode.handlers
 }

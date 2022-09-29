@@ -14,6 +14,7 @@ func FooController(ctx *framework.Context) error {
 	// 这个channel负责通知panic异常
 	panicChan := make(chan interface{}, 1)
 
+	// 在业务逻辑处理前，创建有定时器功能的 context
 	durationCtx, cancel := context.WithTimeout(ctx.BaseContext(), 1*time.Second)
 	defer cancel()
 
